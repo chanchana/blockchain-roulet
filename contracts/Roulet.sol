@@ -84,7 +84,7 @@ contract Roulet {
         uint _j;
         
         for (_i = 0; _i < playerCount; _i++) {
-             for (_j = 0; _j < totalNumber; _j++) {
+             for (_j = 0; _j < totalNumber + 2; _j++) {
                 bet[players[_i]][_j] = 0;
             }
         }
