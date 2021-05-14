@@ -21,7 +21,7 @@ contract Roulet {
     }
     
     function buyToken(uint _amount) public payable {
-        require(msg.value >= _amount, 'Not enough eth in the balance');
+        require(msg.value < _amount, 'Not enough eth in the balance');
         
         playerTokenBalance[msg.sender] += _amount;
     }
