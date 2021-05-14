@@ -1,7 +1,7 @@
 pragma solidity ^0.5.1;
 
 contract Roulet {
-    address payable public manager;
+    address payable public dealer;
     uint public playerCount = 0;
     address payable[] public players;
     mapping(address => bool) private playerExists;
@@ -17,12 +17,24 @@ contract Roulet {
     uint constant private oddColorPosition = 37;
     uint constant private evenColorPosition = 38;
     
-    constructor() public {
-        manager = msg.sender;
+    constructor(uint _amount) public {
+        require(msg.value == amount);
+        dealer = msg.sender;
     }
     
     function buyToken(uint _amount) public {
+        require(msg.value >= _amount, 'Not enough eth in the balance');
+        
         playerTokenBalance[msg.sender] += _amount;
+    }
+
+    function sellToken(uint _amount) public {
+        require(playerTokenBalance[msg.sender] < _amount, 'Not enough token to sell');
+        require(address(this).balance >= _amount, 'The contract have no enough eth');
+
+        playerTokenBalance[msg.sender] -= _amount;
+
+        msg.sender.transfer(_amount);
     }
     
     function myToken() public view returns (uint) {
