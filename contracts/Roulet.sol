@@ -1,12 +1,12 @@
 pragma solidity ^0.5.1;
 
 contract Roulet {
-    address payable public dealer;
     uint public playerCount = 0;
     address payable[] public players;
     mapping(address => bool) private playerExists;
     mapping(address => mapping(uint => uint)) private bet;
     mapping(address => uint) private playerTokenBalance;
+    mapping(address => uint[]) private playerRewardHistory;
     uint[] public spinHistory;
     uint private spinHistoryCount = 0;
     
@@ -17,9 +17,7 @@ contract Roulet {
     uint constant private oddColorPosition = 37;
     uint constant private evenColorPosition = 38;
     
-    constructor(uint _amount) public {
-        require(msg.value == amount);
-        dealer = msg.sender;
+    constructor() payable public {
     }
     
     function buyToken(uint _amount) public {
@@ -82,6 +80,7 @@ contract Roulet {
             }
             
             // pay reward
+            playerRewardHistory[_playerAddress].push(_rewardAmount);
             if (_rewardAmount > 0) {
                 playerTokenBalance[msg.sender] += _rewardAmount;
             }
@@ -97,12 +96,9 @@ contract Roulet {
         
         for (_i = 0; _i < playerCount; _i++) {
              for (_j = 0; _j < totalNumber; _j++) {
-                delete bet[players[_i]][_j];
+                bet[players[_i]][_j] = 0;
             }
-            delete players[_i];
         }
-        
-        playerCount = 0;
     }
     
     function addToHistory(uint _targetNumber) private {
@@ -114,8 +110,8 @@ contract Roulet {
         return spinHistory;
     }
     
-    function getLastestHistory() public view returns (uint) {
-        return spinHistory[spinHistoryCount - 1];
+    function getPlayerRewardHistory() public view returns (uint[] memory) {
+        return playerRewardHistory[msg.sender];
     }
     
     function getBalance() public view returns (uint) {
