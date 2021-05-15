@@ -27,12 +27,12 @@ contract Roulet {
     }
 
     function sellToken(uint _amount) public payable {
-        require(playerTokenBalance[msg.sender] < _amount, 'Not enough token to sell');
-        require(address(this).balance >= _amount, 'The contract have no enough eth');
+        require(playerTokenBalance[msg.sender] >= _amount, 'Not enough token to sell');
+        require(address(this).balance >= _amount * (1 ether), 'The contract have no enough eth');
 
         playerTokenBalance[msg.sender] -= _amount;
 
-        msg.sender.transfer(_amount);
+        msg.sender.transfer(_amount  * (1 ether));
     }
     
     function myToken() public view returns (uint) {
