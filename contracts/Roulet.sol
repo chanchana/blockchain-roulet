@@ -3,6 +3,7 @@ pragma solidity ^0.5.1;
 contract Roulet {
     uint public playerCount = 0;
     address payable[] public players;
+    address payable public dealer;
     mapping(address => bool) private playerExists;
     mapping(address => mapping(uint => uint)) private bet;
     mapping(address => uint) private playerTokenBalance;
@@ -35,6 +36,39 @@ contract Roulet {
     
     function myToken() public view returns (uint) {
         return playerTokenBalance[msg.sender];
+    }
+
+    function dealerBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    function beDealer() public {
+        require(dealer != address(0), 'the roulet already have dealer');
+        
+        dealer = msg.sender;
+    }
+
+    function dealerWithDraw(uint _amount) public payable {
+        require(dealer != address(0), 'the roulet have no dealer');
+        require(dealer == msg.sender, 'you must be dealer to withdraw');
+
+        msg.sender.transfer(_amount  * (1 ether));
+    }
+
+    function dealerDeposit() public payable {
+        require(dealer != address(0), 'the roulet have no dealer');
+        require(dealer == msg.sender, 'you must be dealer to deposit');
+    }
+
+    function dealerResign() public payable {
+        require(dealer != address(0), 'the roulet have no dealer');
+        require(dealer == msg.sender, 'you must be dealer to resign');
+        
+        dealer = address(0);
+
+        if (address(this).balance > 0) {
+            msg.sender.transfer(address(this).balance  * (1 ether));
+        }
     }
     
     // Add bet for player
