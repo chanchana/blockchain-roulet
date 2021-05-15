@@ -43,7 +43,7 @@ contract Roulet {
     }
 
     function beDealer() public {
-        require(dealer != address(0), 'the roulet already have dealer');
+        require(dealer == address(0), 'the roulet already have dealer');
         
         dealer = msg.sender;
     }
