@@ -1,13 +1,18 @@
 pragma solidity ^0.5.1;
 
 contract Roulet {
+    
+    struct PlayerProfile {
+        bool exists;
+        mapping(uint => uint) bet;
+        uint tokenBalance;
+        uint[] rewardHistory;
+    }
+    
     uint public playerCount = 0;
     address payable[] public players;
     address payable public dealer;
-    mapping(address => bool) private playerExists;
-    mapping(address => mapping(uint => uint)) private bet;
-    mapping(address => uint) private playerTokenBalance;
-    mapping(address => uint[]) private playerRewardHistory;
+    mapping(address => PlayerProfile) private playerProfile;
     uint[] public spinHistory;
     uint private spinHistoryCount = 0;
     
@@ -22,20 +27,20 @@ contract Roulet {
     }
     
     function buyToken(uint _amount) public payable {
-        playerTokenBalance[msg.sender] += _amount;
+        playerProfile[msg.sender].tokenBalance += _amount;
     }
 
     function sellToken(uint _amount) public payable {
-        require(playerTokenBalance[msg.sender] >= _amount, 'Not enough token to sell');
+        require(playerProfile[msg.sender].tokenBalance >= _amount, 'Not enough token to sell');
         require(address(this).balance >= _amount * (1 ether), 'The contract have no enough eth');
 
-        playerTokenBalance[msg.sender] -= _amount;
+         playerProfile[msg.sender].tokenBalance -= _amount;
 
         msg.sender.transfer(_amount  * (1 ether));
     }
     
     function myToken() public view returns (uint) {
-        return playerTokenBalance[msg.sender];
+        return  playerProfile[msg.sender].tokenBalance;
     }
 
     function dealerBalance() public view returns (uint256) {
@@ -73,20 +78,20 @@ contract Roulet {
     
     // Add bet for player
     function addBet(uint _number, uint _amount) public {
-        require(playerTokenBalance[msg.sender] >= _amount, 'Not enough token in the balance');
-        if (!playerExists[msg.sender]) {
-            playerExists[msg.sender] = true;
+        require(playerProfile[msg.sender].tokenBalance >= _amount, 'Not enough token in the balance');
+        if (!playerProfile[msg.sender].exists) {
+            playerProfile[msg.sender].exists = true;
             players.push(msg.sender);
             playerCount += 1;
         }
-        bet[msg.sender][_number] += _amount;
-        playerTokenBalance[msg.sender] -= _amount;
+        playerProfile[msg.sender].bet[_number] += _amount;
+        playerProfile[msg.sender].tokenBalance -= _amount;
     }
     
     function removeBet(uint _number, uint _amount) public {
-        require(bet[msg.sender][_number] >= _amount, 'Not enough bet token to remove');
-        bet[msg.sender][_number] -= _amount;
-        playerTokenBalance[msg.sender] += _amount;
+        require(playerProfile[msg.sender].bet[_number] >= _amount, 'Not enough bet token to remove');
+        playerProfile[msg.sender].bet[_number] -= _amount;
+        playerProfile[msg.sender].tokenBalance += _amount;
     }
     
     // Finish spinning and pay the reward
@@ -100,21 +105,21 @@ contract Roulet {
             uint _rewardAmount = 0;
             
             // number reward
-            if (bet[_playerAddress][_targetNumber] > 0) {
-                _rewardAmount += bet[_playerAddress][_targetNumber] * numberRewardMultiplier;
+            if (playerProfile[_playerAddress].bet[_targetNumber] > 0) {
+                _rewardAmount += playerProfile[_playerAddress].bet[_targetNumber] * numberRewardMultiplier;
             }
             
             // odd even color reward
-            if (_isOdd && bet[_playerAddress][oddColorPosition] > 0) {
-                _rewardAmount += bet[_playerAddress][oddColorPosition] * colorRewardMultiplier;
-            } else if (_isEven && bet[_playerAddress][evenColorPosition] > 0) {
-                _rewardAmount += bet[_playerAddress][evenColorPosition] * colorRewardMultiplier;
+            if (_isOdd && playerProfile[_playerAddress].bet[oddColorPosition] > 0) {
+                _rewardAmount += playerProfile[_playerAddress].bet[oddColorPosition] * colorRewardMultiplier;
+            } else if (_isEven && playerProfile[_playerAddress].bet[evenColorPosition] > 0) {
+                _rewardAmount += playerProfile[_playerAddress].bet[evenColorPosition] * colorRewardMultiplier;
             }
             
             // pay reward
-            playerRewardHistory[_playerAddress].push(_rewardAmount);
+            playerProfile[_playerAddress].rewardHistory.push(_rewardAmount);
             if (_rewardAmount > 0) {
-                playerTokenBalance[msg.sender] += _rewardAmount;
+                playerProfile[_playerAddress].tokenBalance += _rewardAmount;
             }
         }
         
@@ -128,7 +133,7 @@ contract Roulet {
         
         for (_i = 0; _i < playerCount; _i++) {
              for (_j = 0; _j < totalNumber + 2; _j++) {
-                bet[players[_i]][_j] = 0;
+                playerProfile[players[_i]].bet[_j] = 0;
             }
         }
     }
@@ -143,7 +148,7 @@ contract Roulet {
     }
     
     function getPlayerRewardHistory() public view returns (uint[] memory) {
-        return playerRewardHistory[msg.sender];
+        return playerProfile[msg.sender].rewardHistory;
     }
     
     function getBalance() public view returns (uint) {
@@ -157,7 +162,7 @@ contract Roulet {
     }
     
     function getMyBet(uint _number) public view returns (uint) {
-        return bet[msg.sender][_number];
+        return playerProfile[msg.sender].bet[_number];
     }
     
     function pseudoRandom() private view returns (uint) {
